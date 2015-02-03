@@ -9,10 +9,10 @@ class Battleship
 		# for i in 0..9
 		# 	print "#{comp_grid[i]}\n" 
 		# end
-		# puts comp_grid[1][1]
+		puts comp_grid[1][1]
 	end
 
-	
+
 end
 
 Battleship.new()

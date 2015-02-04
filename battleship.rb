@@ -2,6 +2,7 @@ class Battleship
 	require 'matrix'
 	def initialize
 		createboard
+		
 	end
 
 	def createboard

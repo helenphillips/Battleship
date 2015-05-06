@@ -18,35 +18,40 @@ class Battleships
 			ship_placing(ship, size, 1000, human_board)
 		end
 
-		turn(comp_board, human_board) ## not complete
+		round(comp_board, human_board) 
 
 	end
 
-	def turn(comp_board, human_board)
+
+
+	def round(comp_board, human_board)
 		## human guess
 		puts "Your turn"
-		## check whether guess hits a ship
-		if test_hit(human_guess, comp_board)
-			puts "HIT!"
-		else
-			puts "missed"
-		end
-		## returnng the result
 
-		# check whether game has ended	
-		comp_guess = computer_guess
-		## computer guess
-		puts "Computer's turn"
-		puts comp_guess
-		if test_hit(comp_guess, human_board)
-			puts "The computer hit"
-		else
-			puts "The computer missed"
-		end
-		## player told wehter it was a hit
-		turn(comp_board, human_board)
+		turn("Human", human_guess, comp_board)
+
+		turn("Computer", computer_guess, human_board)
+
+		round(comp_board, human_board)
 		## check whether game has ended		
 	end
+
+	def turn(player, guess, opponents_board)
+		a_turn = test_hit(guess, opponents_board)
+		case a_turn
+		when Coord
+			puts "You tried that already" unless player == "Computer"
+			turn(player, human_guess, opponents_board)
+		when true
+			puts "The #{player} hit"
+		when false
+			puts "The #{player} missed"
+		
+		end
+		## player told wehter it was a hit
+
+	end
+
 
 	def ship_placing(ship, size, num_tries, player_board)
 		if num_tries == 0
@@ -114,13 +119,25 @@ class Battleships
 	end
 
 	def test_hit(coord_to_test, player_board)
+		if(already_tried?(coord_to_test, player_board))
+			return coord_to_test
+		else	
+			player_board.coords_used << coord_to_test  
+		end
 		player_board.ships.each do |ship|
 			ship.coordinates.each do |ship_point|
 				if ship_point.compare(coord_to_test)
 					ship.hit_coords << coord_to_test
 					puts "HIT!"
+					
 					if ship.hit_coords.size == ship.length
 						puts "You sunk my battleship!"
+						
+						if game_won(player_board)
+							puts "#{player_board.player_name} was beaten. GAME OVER!"
+							exit
+						end
+
 					end
 					return true
 				end
@@ -129,6 +146,19 @@ class Battleships
 		return false
 	end
 
+	def already_tried?(coord_to_test, player_board)
+		player_board.coords_used.map{|coord| [coord.x, coord.y]}.include? [coord_to_test.x, coord_to_test.y]
+	end
+
+
+	def game_won(player_board)
+		ships_sunk = player_board.ships.inject([]){| arr, ship|
+			arr << (ship.hit_coords.size == ship.length)
+		}
+
+		ships_sunk.all?{ |a| a == true}
+
+	end
 
 	def computer_guess
 		return random_coord
@@ -136,23 +166,25 @@ class Battleships
 
 	def human_guess
 		puts "Guess x - must be between 0 and #{@board_size - 1}"	
-		attempt_x = gets.chomp.to_i
+		attempt_x = gets.chomp
 		puts "Guess y - must be between 0 and #{@board_size - 1}"
-		attempt_y = gets.chomp.to_i
+		attempt_y = gets.chomp
 		if not human_guess_validation(attempt_x, attempt_y)
 			puts "Invalid guess, try again!"
 			return human_guess
 		end
-		return Coord.new(attempt_x, attempt_y)
+		return Coord.new(attempt_x.to_i, attempt_y.to_i)
 	end
 
 	def human_guess_validation(attempt_x, attempt_y)
-		if attempt_y > @board_size-1
+		if attempt_x.empty? || attempt_y.empty?
 			return false
 		end
-		if attempt_x > @board_size-1
+
+		if attempt_y.to_i > @board_size-1 || attempt_x.to_i > @board_size-1
 			return false
 		end
+		
 		return true
 	end
 end 
@@ -173,9 +205,11 @@ end
 class Board
 	attr_accessor :player_name
 	attr_accessor :ships
+	attr_accessor :coords_used
 	def initialize(player_name)
 		@player_name = player_name
 		@ships = []
+		@coords_used = []
 	end
 end
 
